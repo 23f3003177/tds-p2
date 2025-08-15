@@ -3,3 +3,4 @@ uvicorn
 uv
 google-genai
 python-dotenv
+python-multipart
