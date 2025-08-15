@@ -2,3 +2,4 @@ fastapi
 uvicorn
 uv
 google-genai
+python-dotenv
