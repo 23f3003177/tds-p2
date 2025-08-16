@@ -2,6 +2,7 @@
 # from crewai import Agent, Task, Crew, LLM
 # from e2b_code_interpreter import Sandbox
 from dotenv import load_dotenv
+
 # from crewai_tools import CodeInterpreterTool
 
 # # Initialize the tool
@@ -60,16 +61,20 @@ load_dotenv()
 # print(result)
 
 import os
+
+from e2b_code_interpreter import Sandbox
 from google import genai
 from google.genai import types
 from pydantic import BaseModel
-from e2b_code_interpreter import Sandbox
+
 
 class GeneratedCode(BaseModel):
     code: str
     required_packages: list[str]
 
-client = genai.Client(api_key=os.getenv('GEMINI_API_KEY'))
+
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+
 
 def get_ai_code_gen(messages: list[str]):
     response = client.models.generate_content(
@@ -81,13 +86,13 @@ def get_ai_code_gen(messages: list[str]):
             system_instruction="You're an expert in generating code for extracting and analyzing data using python. Just return the libraries needed (don't include any system libraries like json, base64 etc., since they will be preinstalled already) and the code (the result values only). The code you're generating should always return an json array as output (the array should contain answers to the questions only don't anything verbosely). Don't add any comments in the code that you're generating. You may get only one chance to run the code, so generate it with caution",
             response_mime_type="application/json",
             response_schema=GeneratedCode,
-            temperature=0
+            temperature=0,
         ),
     )
     return response
 
-if __name__ == '__main__':
 
+if __name__ == "__main__":
     # messages = [
     #     """Scrape the list of highest grossing films from Wikipedia. It is at the URL:
     # https://en.wikipedia.org/wiki/List_of_highest-grossing_films
@@ -101,7 +106,8 @@ if __name__ == '__main__':
     # Return as a base-64 encoded data URI, `"data:image/png;base64,iVBORw0KG..."` under 100,000 bytes.
     # Return the outputs as an json array for each question"""
     #             ]
-    messages = ["""The Indian high court judgement dataset contains judgements from the Indian High Courts, downloaded from [ecourts website](https://judgments.ecourts.gov.in/). It contains judgments of 25 high courts, along with raw metadata (as .json) and structured metadata (as .parquet).
+    messages = [
+        """The Indian high court judgement dataset contains judgements from the Indian High Courts, downloaded from [ecourts website](https://judgments.ecourts.gov.in/). It contains judgments of 25 high courts, along with raw metadata (as .json) and structured metadata (as .parquet).
 
 - 25 high courts
 - ~16M judgments
@@ -178,19 +184,23 @@ Answer the following questions and respond with a JSON object containing the ans
         print(generated_code.code)
         sbx = Sandbox(timeout=600)
         # with Sandbox() as sbx:/
-            # for pkg in generated_code.required_packages:
-        installation = sbx.commands.run(f'pip install {" ".join(generated_code.required_packages)} --ignore-installed')
+        # for pkg in generated_code.required_packages:
+        installation = sbx.commands.run(
+            f"pip install {' '.join(generated_code.required_packages)} --ignore-installed"
+        )
         print(installation)
         out = sbx.run_code(generated_code.code)
         print(out)
         i = 1
         while out.error:
-            print(f'{i}: Iterating through the error')
+            print(f"{i}: Iterating through the error")
             messages.append(str(out.error))
             response = get_ai_code_gen(messages)
             generated_code: GeneratedCode = response.parsed
             print(generated_code)
-            sbx.commands.run(f'pip install {" ".join(generated_code.required_packages)}')
+            sbx.commands.run(
+                f"pip install {' '.join(generated_code.required_packages)}"
+            )
             out = sbx.run_code(generated_code.code)
             print(out)
             if i >= 5:
@@ -198,4 +208,3 @@ Answer the following questions and respond with a JSON object containing the ans
             i += 1
             print(out)
         sbx.kill()
-

@@ -1,15 +1,15 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-import os
-from dotenv import load_dotenv
 
-load_dotenv()
 
 class Settings(BaseSettings):
-    GEMINI_API_KEY: str = os.getenv('GEMINI_API_KEY', '')
-    E2B_API_KEY: str = os.getenv('E2B_API_KEY', '')
-    ALLOWED_ORIGINS: list[str] = ["*"] # Example for a frontend
-    AGENT_MODEL: str = "gemini-2.5-flash"
-    SANDBOX_TIMEOUT_SECONDS: int = 600
-    MAX_RETRY_ATTEMPTS: int = 3
+    model_config = SettingsConfigDict(
+        env_file=".env", env_file_encoding="utf-8", extra="ignore"
+    )
+    gemini_api_key: str = ""
+    app_env: str = "production"
+    log_level: str = "INFO"
+    max_error_iterations: int = 10
+    code_exec_timeout: int = 600
+
 
 settings = Settings()
