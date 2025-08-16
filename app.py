@@ -77,7 +77,7 @@ def read_question_from_file(temp_dir: str, filename: str = "questions.txt") -> s
 @app.post("/api/v1/query")
 async def process_query(
     req: Request, llm_client: Annotated[LLMClient, Depends(get_llm_client)]
-) -> Dict[Any, Any] | list[Any]:
+) -> Any:
     if not req.headers.get("content-type", "").startswith("multipart/form-data"):
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
@@ -99,7 +99,7 @@ async def process_query(
             question = read_question_from_file(
                 temp_dir
             )
-            
+
             log.info(f"Processing query from questions.txt")
 
             response = llm_client.generate_code(question)
