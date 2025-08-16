@@ -11,7 +11,7 @@ from typing import Annotated, Any, Dict, List
 import aiofiles
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.datastructures import UploadFile
+from starlette.datastructures import UploadFile, FormData
 
 from config import settings
 from logging_config import setup_logging
@@ -43,13 +43,24 @@ def get_llm_client() -> LLMClient:
     return app_state["llm_client"]
 
 
-async def save_files_to_temp_dir(files: List[UploadFile], temp_dir: str):
-    async def save_file(file: UploadFile):
-        file_path = os.path.join(temp_dir, file.filename)  # type: ignore
-        async with aiofiles.open(file_path, "wb") as f:
+async def save_files_to_temp_dir(form_data: FormData, temp_dir: str):
+    """
+    Saves all uploaded files from a form to a temporary directory.
+    Uses the form field's key as the filename.
+    """
+    async def save_file(key: str, file: UploadFile):
+        # Use the key from the form field as the filename
+        file_path = os.path.join(temp_dir, key)
+        async with aiofiles.open(file_path, 'wb') as f:
             await f.write(await file.read())
 
-    await asyncio.gather(*(save_file(f) for f in files))
+    # Create a list of tasks to run concurrently
+    tasks = []
+    for key, value in form_data.items():
+        if isinstance(value, UploadFile):
+            tasks.append(save_file(key, value))
+    
+    await asyncio.gather(*tasks)
 
 
 def read_question_from_file(temp_dir: str, filename: str = "questions.txt") -> str:
@@ -76,7 +87,6 @@ async def process_query(
     form = await req.form()
 
     uploaded_files = [v for v in form.values() if isinstance(v, UploadFile)]
-    print(form, uploaded_files)
 
     if not uploaded_files:
         raise HTTPException(
@@ -85,7 +95,7 @@ async def process_query(
 
     with TemporaryDirectory() as temp_dir:
         try:
-            await save_files_to_temp_dir(uploaded_files, temp_dir)
+            await save_files_to_temp_dir(form, temp_dir)
             question = read_question_from_file(
                 temp_dir
             )  # This helper still works perfectly
