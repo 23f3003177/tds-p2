@@ -77,7 +77,7 @@ def read_question_from_file(temp_dir: str, filename: str = "questions.txt") -> s
 @app.post("/api/v1/query")
 async def process_query(
     req: Request, llm_client: Annotated[LLMClient, Depends(get_llm_client)]
-) -> Dict[str, Any]:
+) -> Dict[Any, Any] | list[Any]:
     if not req.headers.get("content-type", "").startswith("multipart/form-data"):
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
@@ -98,10 +98,9 @@ async def process_query(
             await save_files_to_temp_dir(form, temp_dir)
             question = read_question_from_file(
                 temp_dir
-            )  # This helper still works perfectly
+            )
+            
             log.info(f"Processing query from questions.txt")
-
-            # CRITICAL SECURITY WARNING... (rest of the logic is unchanged)
 
             response = llm_client.generate_code(question)
             if not response or not response.code:
