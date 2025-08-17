@@ -102,7 +102,7 @@ Your response MUST be a single, raw JSON object with NO markdown formatting (e.g
     * The outputs should ALWAYS be stored in a variable named result.
     * The script must be clean, with very minimal comments.
     * Since this code will be executed by an interpreter ensure that the string quotes were defined inside your code correctly so it won't cause any template literal errors or any other.
-    * The user will mention the required output format (like json with keys) that he needs if it was not sepecified then return the resuts as a JSON array containing the answers (the answers in the array should correspond to the order of the questions asked).
+    * The user will mention the required output format (like json with keys) that he needs if it was not mentioned then return the resuts as a JSON array containing the answers (the answers in the array should correspond to the order of the questions asked). Don't add anything additional to the answers.
 3.  `"is_final_answer"`: A boolean value indicating this is your final code. It will be executed and the answers will be shared to the users. If there is any error, it will be passed back to you.
 
 **Error Handling:**
