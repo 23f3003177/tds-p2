@@ -137,5 +137,6 @@ class LLMClient:
 
     def generate_code(self, prompt: str) -> GeneratedCode:
         response = self.chat.send_message(prompt)
+        print(response.text)
         parsed_response = GeneratedCode.model_validate(response.parsed)
         return parsed_response

@@ -9,7 +9,8 @@ class Settings(BaseSettings):
     app_env: str = "production"
     log_level: str = "INFO"
     max_error_iterations: int = 10
-    code_exec_timeout: int = 600
+    code_exec_timeout: int = 300
+    response_timeout: int = 290
 
 
 settings = Settings()

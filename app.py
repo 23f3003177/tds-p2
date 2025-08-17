@@ -11,10 +11,11 @@ from typing import Annotated, Any, Dict, List
 import aiofiles
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.datastructures import UploadFile, FormData
+from starlette.datastructures import FormData, UploadFile
 
 from config import settings
 from logging_config import setup_logging
+from middlewares import TimeoutMiddleware
 from services import LLMClient, UVCodeInterpreter
 
 setup_logging()
@@ -37,6 +38,7 @@ app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"]
 )
+app.add_middleware(TimeoutMiddleware, settings.response_timeout)
 
 
 def get_llm_client() -> LLMClient:
@@ -48,10 +50,11 @@ async def save_files_to_temp_dir(form_data: FormData, temp_dir: str):
     Saves all uploaded files from a form to a temporary directory.
     Uses the form field's key as the filename.
     """
+
     async def save_file(key: str, file: UploadFile):
         # Use the key from the form field as the filename
         file_path = os.path.join(temp_dir, key)
-        async with aiofiles.open(file_path, 'wb') as f:
+        async with aiofiles.open(file_path, "wb") as f:
             await f.write(await file.read())
 
     # Create a list of tasks to run concurrently
@@ -59,7 +62,7 @@ async def save_files_to_temp_dir(form_data: FormData, temp_dir: str):
     for key, value in form_data.items():
         if isinstance(value, UploadFile):
             tasks.append(save_file(key, value))
-    
+
     await asyncio.gather(*tasks)
 
 
@@ -96,9 +99,7 @@ async def process_query(
     with TemporaryDirectory() as temp_dir:
         try:
             await save_files_to_temp_dir(form, temp_dir)
-            question = read_question_from_file(
-                temp_dir
-            )
+            question = read_question_from_file(temp_dir)
 
             log.info(f"Processing query from questions.txt")
 
@@ -114,10 +115,13 @@ async def process_query(
                 for i in range(settings.max_error_iterations):
                     log.info(f"Code execution attempt #{i + 1}")
                     stdout, stderr, result = sbx.run(response.code, response.libraries)
-
+                    # print("CODE", response.code)
+                    # print("STDOUT", stdout[:1000])
+                    # print("STDERR", stderr[:1000])
+                    # print("RESULT", str(result)[:1000] if result is not None else None)
                     if not stderr and response.is_final_answer:
                         log.info("Code execution successful with final answer.")
-                        return json.loads(result)
+                        return json.loads(result) if isinstance(result, (str, bytearray, bytes)) else result
 
                     log.warning(
                         f"Iteration #{i + 1} failed or requires refinement. Error: {stderr[:500]}"
