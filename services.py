@@ -6,7 +6,7 @@ import subprocess
 import sys
 import uuid
 from tempfile import TemporaryDirectory
-from typing import Any, List, Optional, Tuple, Literal
+from typing import Any, List, Literal, Optional, Tuple
 
 from google import genai
 from google.genai import types
@@ -123,16 +123,20 @@ if 'result' in locals():
 
 
 class LLMClient:
-    def __init__(self, api_key: str, digital_ocean_model_access_key: str, digital_ocean_model_access_base_url: str, provider: Literal['gemini', 'openai']='gemini') -> None:
-        print(f'Using {provider} as provider')
-        self.chat_history = [{
-            "role": "system", "content": optimized_prompt
-        }]
+    def __init__(
+        self,
+        api_key: str,
+        digital_ocean_model_access_key: str,
+        digital_ocean_model_access_base_url: str,
+        provider: Literal["gemini", "openai"] = "gemini",
+    ) -> None:
+        print(f"Using {provider} as provider")
+        self.chat_history = [{"role": "system", "content": optimized_prompt}]
         self.provider = provider
-        if provider == 'openai':
+        if provider == "openai":
             self.client = OpenAI(
-                base_url=digital_ocean_model_access_base_url, 
-                api_key=digital_ocean_model_access_key
+                base_url=digital_ocean_model_access_base_url,
+                api_key=digital_ocean_model_access_key,
             )
         else:
             self.client = genai.Client(api_key=api_key)
@@ -149,23 +153,21 @@ class LLMClient:
             )
 
     def generate_code(self, prompt: str) -> GeneratedCode:
-        if self.provider == 'openai':
-            client: OpenAI = self.client # type: ignore
-            self.chat_history.append({
-                'content': prompt, 'role': 'user'
-            })
+        if self.provider == "openai":
+            client: OpenAI = self.client  # type: ignore
+            self.chat_history.append({"content": prompt, "role": "user"})
             response = client.chat.completions.parse(
                 model="openai-gpt-5",
-                messages=self.chat_history, # type: ignore
+                messages=self.chat_history,  # type: ignore
                 max_tokens=4096,
                 response_format=GeneratedCode,
-                reasoning_effort="low"
+                reasoning_effort="low",
             )
             message = response.choices[0].message
             parsed_response = GeneratedCode.model_validate(message.parsed)
-            self.chat_history.append({
-                'role': 'assistant', 'content': str(message.content)
-            })
+            self.chat_history.append(
+                {"role": "assistant", "content": str(message.content)}
+            )
             return parsed_response
         else:
             response = self.chat.send_message(prompt)

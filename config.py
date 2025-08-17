@@ -1,5 +1,7 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Literal
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -7,13 +9,13 @@ class Settings(BaseSettings):
     )
     gemini_api_key: str = ""
     digital_ocean_model_access_base_url: str = ""
-    digital_ocean_model_access_key : str = ""
+    digital_ocean_model_access_key: str = ""
     app_env: str = "production"
     log_level: str = "INFO"
     max_error_iterations: int = 10
     code_exec_timeout: int = 300
     response_timeout: int = 290
-    llm_provider: Literal['openai', 'gemini'] = 'gemini'
+    llm_provider: Literal["openai", "gemini"] = "gemini"
 
 
 settings = Settings()

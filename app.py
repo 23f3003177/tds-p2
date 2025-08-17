@@ -43,7 +43,12 @@ app.add_middleware(TimeoutMiddleware, settings.response_timeout)
 
 
 def get_llm_client() -> LLMClient:
-    return LLMClient(settings.gemini_api_key, settings.digital_ocean_model_access_key, settings.digital_ocean_model_access_base_url, settings.llm_provider)
+    return LLMClient(
+        settings.gemini_api_key,
+        settings.digital_ocean_model_access_key,
+        settings.digital_ocean_model_access_base_url,
+        settings.llm_provider,
+    )
 
 
 async def save_files_to_temp_dir(form_data: FormData, temp_dir: str):
@@ -122,7 +127,11 @@ async def process_query(
                     # print("RESULT", str(result)[:1000] if result is not None else None)
                     if not stderr and response.is_final_answer:
                         log.info("Code execution successful with final answer.")
-                        return json.loads(result) if isinstance(result, (str, bytearray, bytes)) else result
+                        return (
+                            json.loads(result)
+                            if isinstance(result, (str, bytearray, bytes))
+                            else result
+                        )
 
                     log.warning(
                         f"Iteration #{i + 1} failed or requires refinement. Error: {stderr[:500]}"
@@ -155,7 +164,8 @@ async def process_query(
                 detail="An internal server error occurred.",
             )
 
-@app.get('/api/v1/timeout')
+
+@app.get("/api/v1/timeout")
 async def test_timeout():
     time.sleep(300)
     return {}
