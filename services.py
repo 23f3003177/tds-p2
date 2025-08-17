@@ -128,6 +128,7 @@ class LLMClient:
             model="gemini-2.5-flash",
             config=types.GenerateContentConfig(
                 thinking_config=types.ThinkingConfig(thinking_budget=0),
+                max_output_tokens=4096,
                 system_instruction=optimized_prompt,
                 response_mime_type="application/json",
                 response_schema=GeneratedCode,

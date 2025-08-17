@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import shutil
+import time
 from contextlib import asynccontextmanager
 from tempfile import TemporaryDirectory
 from typing import Annotated, Any, Dict, List
@@ -153,3 +154,8 @@ async def process_query(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="An internal server error occurred.",
             )
+
+@app.get('/api/v1/timeout')
+async def test_timeout():
+    time.sleep(300)
+    return {}
