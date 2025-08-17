@@ -43,7 +43,7 @@ app.add_middleware(TimeoutMiddleware, settings.response_timeout)
 
 
 def get_llm_client() -> LLMClient:
-    return LLMClient(settings.gemini_api_key)
+    return LLMClient(settings.gemini_api_key, settings.digital_ocean_model_access_key, settings.digital_ocean_model_access_base_url, settings.llm_provider)
 
 
 async def save_files_to_temp_dir(form_data: FormData, temp_dir: str):

@@ -6,10 +6,12 @@ import subprocess
 import sys
 import uuid
 from tempfile import TemporaryDirectory
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple, Literal
 
 from google import genai
 from google.genai import types
+from openai import OpenAI
+from openai.types.chat import ChatCompletionMessageParam
 
 from prompts import optimized_prompt
 from schemas import GeneratedCode
@@ -121,23 +123,52 @@ if 'result' in locals():
 
 
 class LLMClient:
-    def __init__(self, api_key: str) -> None:
-        client = genai.Client(api_key=api_key)
-
-        self.chat = client.chats.create(
-            model="gemini-2.5-flash",
-            config=types.GenerateContentConfig(
-                thinking_config=types.ThinkingConfig(thinking_budget=0),
-                max_output_tokens=4096,
-                system_instruction=optimized_prompt,
-                response_mime_type="application/json",
-                response_schema=GeneratedCode,
-                temperature=0,
-            ),
-        )
+    def __init__(self, api_key: str, digital_ocean_model_access_key: str, digital_ocean_model_access_base_url: str, provider: Literal['gemini', 'openai']='gemini') -> None:
+        print(f'Using {provider} as provider')
+        self.chat_history = [{
+            "role": "system", "content": optimized_prompt
+        }]
+        self.provider = provider
+        if provider == 'openai':
+            self.client = OpenAI(
+                base_url=digital_ocean_model_access_base_url, 
+                api_key=digital_ocean_model_access_key
+            )
+        else:
+            self.client = genai.Client(api_key=api_key)
+            self.chat = self.client.chats.create(
+                model="gemini-2.5-flash",
+                config=types.GenerateContentConfig(
+                    thinking_config=types.ThinkingConfig(thinking_budget=0),
+                    max_output_tokens=4096,
+                    system_instruction=optimized_prompt,
+                    response_mime_type="application/json",
+                    response_schema=GeneratedCode,
+                    temperature=0,
+                ),
+            )
 
     def generate_code(self, prompt: str) -> GeneratedCode:
-        response = self.chat.send_message(prompt)
-        print(response.text)
-        parsed_response = GeneratedCode.model_validate(response.parsed)
-        return parsed_response
+        if self.provider == 'openai':
+            client: OpenAI = self.client # type: ignore
+            self.chat_history.append({
+                'content': prompt, 'role': 'user'
+            })
+            response = client.chat.completions.parse(
+                model="openai-gpt-5",
+                messages=self.chat_history, # type: ignore
+                max_tokens=4096,
+                response_format=GeneratedCode,
+                reasoning_effort="low"
+            )
+            message = response.choices[0].message
+            parsed_response = GeneratedCode.model_validate(message.parsed)
+            self.chat_history.append({
+                'role': 'assistant', 'content': str(message.content)
+            })
+            return parsed_response
+        else:
+            response = self.chat.send_message(prompt)
+            print(response.text)
+            parsed_response = GeneratedCode.model_validate(response.parsed)
+            return parsed_response
