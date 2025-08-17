@@ -162,6 +162,7 @@ class LLMClient:
                 max_tokens=4096,
                 response_format=GeneratedCode,
                 reasoning_effort="low",
+                temperature=0
             )
             message = response.choices[0].message
             parsed_response = GeneratedCode.model_validate(message.parsed)
