@@ -26,7 +26,7 @@ app_state = {}
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     log.info("Application startup: Initializing LLMClient...")
-    app_state["llm_client"] = LLMClient(settings.gemini_api_key)
+    # app_state["llm_client"] = LLMClient(settings.gemini_api_key)
     yield
     log.info("Application shutdown: Cleaning up resources.")
     app_state.clear()
@@ -40,7 +40,7 @@ app.add_middleware(
 
 
 def get_llm_client() -> LLMClient:
-    return app_state["llm_client"]
+    return LLMClient(settings.gemini_api_key)
 
 
 async def save_files_to_temp_dir(form_data: FormData, temp_dir: str):
